@@ -100,7 +100,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;background:var(--t
    DATAPIPE_ID: experiment ID from pipe.jspsych.org (saves each CSV to OSF). Empty = preview mode.
    COMPLETION_URL: e.g. https://app.prolific.com/submissions/complete?cc=XXXXXXX
    URL params: ?PROLIFIC_PID=…&STUDY_ID=…&SESSION_ID=…  &debug=1 shows a "Fill & skip" button. */
-const CONFIG = { DATAPIPE_ID: '', COMPLETION_URL: '', VERSION: 'adult-pilot-v2' };
+const CONFIG = { DATAPIPE_ID: 'OZsCRPqjOiZq', COMPLETION_URL: '', VERSION: 'adult-pilot-v2' };
 /* Each person sees 4 kids: the 3 core shapes (dip, low plateau, high plateau) for everyone,
    plus ONE comparison shape. Condition 0 = steady rise, 1 = steady drop, 2 = random.
    With DATAPIPE_ID set, DataPipe balances the 3 conditions (set 3 conditions there).
@@ -109,6 +109,8 @@ const CONFIG = { DATAPIPE_ID: '', COMPLETION_URL: '', VERSION: 'adult-pilot-v2' 
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.get('debug') === '1';
 const P = { pid:(qs.get('PROLIFIC_PID')||qs.get('id')||'').slice(0,80), study:qs.get('STUDY_ID')||'', session:qs.get('SESSION_ID')||'', start:new Date().toISOString() };
+// No ID in the link (friends, family): make an anonymous random one so nobody has to type anything.
+if(!P.pid){ const a='abcdefghjkmnpqrstuvwxyz23456789'; let s=''; for(let i=0;i<10;i++) s+=a[Math.floor(Math.random()*a.length)]; P.pid='anon_'+s; }
 const $ = s => document.querySelector(s);
 const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 
