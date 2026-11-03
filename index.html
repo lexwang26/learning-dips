@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Learning Dips Adult Pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400..700&family=Public+Sans:wght@400..700&display=swap">
+<style>
+/* Layout: one centered survey column (max 860px); the 9-day basket strip sits at the top of each trial,
+   questions below it. Deliberately one light look so every participant sees identical stimuli. */
+:root{
+  --bg:#F7F6F1; --card:#FFFFFF; --ink:#1B2340; --soft:#4A5068; --line:#DDE0E8; --tint:#EEF0F6;
+  --accent:#B04A12; --accent-fill:#E07A3F; --accent-bg:#FFF4EC; --blue:#2F5E9E; --ok:#0E8A7A; --ground:#EDE3C8;
+  --f-head:'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --f-body:'Public Sans', Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font:17px/1.55 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:20px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.meta{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--soft)}
+h1,h2{font-family:var(--f-head);font-weight:600;line-height:1.2;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,34px)} h2{font-size:clamp(21px,3vw,26px)}
+p{margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.lead{font-size:18px}
+.muted{color:var(--soft)}
+.note{background:var(--accent-bg);border:1px dashed var(--accent-fill);border-radius:10px;padding:12px 14px;font-size:15px}
+button{font:600 16px var(--f-body);border-radius:10px;border:1px solid var(--ink);background:var(--ink);color:#FFFFFF;padding:12px 20px;cursor:pointer}
+button.ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.opt:focus-within{outline:3px solid var(--blue);outline-offset:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.err{color:var(--accent);font-weight:600;font-size:15px}
+/* character */
+.who{display:flex;gap:14px;align-items:center}
+.who svg{width:64px;height:72px;flex:none}
+/* day strip */
+.days{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.days{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}}
+.day{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.day svg{width:100%;height:auto;display:block;border-radius:8px}
+.day .lab{font-size:14px;color:var(--soft)}
+.day .cnt{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+form.card{max-width:860px;width:100%;margin-inline:auto}
+.day.hid svg{opacity:.25;filter:grayscale(1)}
+.day.hid .cnt{visibility:hidden}
+.day.new svg{outline:3px solid var(--ink);outline-offset:-3px}
+@media (prefers-reduced-motion:no-preference){.day.new svg{animation:pop .35s ease-out}@keyframes pop{from{transform:scale(.85)}to{transform:scale(1)}}}
+.row-label{font-weight:700;font-size:15px}
+/* questions */
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-weight:600;padding:0;margin:0 0 8px;font-size:17px;float:left;width:100%}
+legend + *{clear:both}
+#app{display:flex;flex-direction:column;gap:20px}
+.q{border-top:1px solid var(--line);padding-top:16px}
+.q.missing legend{color:var(--accent)}
+.likert{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.likert label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:14px;cursor:pointer;padding:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.likert input{margin:0;width:18px;height:18px}
+.likert label:has(input:checked){background:var(--tint);border-color:var(--ink)}
+.ends{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--soft)}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choices.inline{flex-direction:row;flex-wrap:wrap}
+label.opt{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--card)}
+label.opt:has(input:checked){background:var(--tint);border-color:var(--ink)}
+label.opt input{margin:0;width:18px;height:18px;flex:none}
+.nums{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.nums label{justify-content:center;font-weight:700;font-variant-numeric:tabular-nums}
+textarea,input[type=number],input[type=text],select{font:16px var(--f-body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:76px;resize:vertical}
+.pair{display:flex;flex-direction:column;gap:6px}
+pre{white-space:pre-wrap;word-break:break-word;font-size:12px;background:var(--tint);border-radius:10px;padding:12px;max-height:280px;overflow:auto;margin:0}
+#debug{position:fixed;right:max(12px, env(safe-area-inset-right, 0px));bottom:max(12px, env(safe-area-inset-bottom, 0px));font-size:13px;padding:8px 12px}
+</style>
+<style>html,body{margin:0}body{-webkit-text-size-adjust:100%}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="bk"><rect x="4" y="2" width="142" height="116" rx="12" fill="#FFFFFF" stroke="#DDE0E8"/><rect x="4" y="106" width="142" height="12" fill="#EDE3C8"/><path d="M39 58 L111 58 L101 106 L49 106 Z" fill="#d7a35e"/><path d="M43 72 L107 72 M46 86 L104 86 M48 98 L102 98 M57 58 L61 106 M75 58 L75 106 M93 58 L89 106" stroke="#b07b37" stroke-width="2"/><rect x="36" y="54" width="78" height="6" rx="3" fill="#b07b37"/></g>
+<g id="ball"><circle r="7" fill="#f2a33a" stroke="#b9741f"/><path d="M-7 0 Q0 -4.5 7 0" stroke="#b9741f" fill="none"/></g>
+</defs></svg>
+
+<div class="wrap">
+  <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+  <div class="meta"><span id="step"></span><span id="mode"></span></div>
+  <main id="app" aria-live="polite"></main>
+</div>
+<button id="debug" class="ghost" hidden>Fill &amp; skip</button>
+
+<script>
+(() => {
+/* ---------- Settings ----------
+   DATAPIPE_ID: experiment ID from pipe.jspsych.org (saves each CSV to OSF). Empty = preview mode.
+   COMPLETION_URL: e.g. https://app.prolific.com/submissions/complete?cc=XXXXXXX
+   URL params: ?PROLIFIC_PID=…&STUDY_ID=…&SESSION_ID=…  &debug=1 shows a "Fill & skip" button. */
+const CONFIG = { DATAPIPE_ID: '', COMPLETION_URL: '', VERSION: 'adult-pilot-v2' };
+/* Each person sees 4 kids: the 3 core shapes (dip, low plateau, high plateau) for everyone,
+   plus ONE comparison shape. Condition 0 = steady rise, 1 = steady drop, 2 = random.
+   With DATAPIPE_ID set, DataPipe balances the 3 conditions (set 3 conditions there).
+   Otherwise it is random; &cond=0|1|2 forces one for testing. */
+
+const qs = new URLSearchParams(location.search);
+const DEBUG = qs.get('debug') === '1';
+const P = { pid:(qs.get('PROLIFIC_PID')||qs.get('id')||'').slice(0,80), study:qs.get('STUDY_ID')||'', session:qs.get('SESSION_ID')||'', start:new Date().toISOString() };
+const $ = s => document.querySelector(s);
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ---------- Stimuli ---------- */
+const CHECK_DAY = 5;   // prediction is asked after Day 5 in every trajectory; the dip's drop comes on Day 6
+const TRAJ = [
+  {id:'dip',          days:[1,2,3,4,5,2,2,3,2]},
+  {id:'plateau_low',  days:[0,1,2,2,2,2,2,2,2]},
+  {id:'plateau_high', days:[1,2,3,4,5,5,5,5,5]},
+  {id:'steady_rise',  days:[1,1,2,2,3,3,4,4,5]},
+  {id:'steady_drop',  days:[5,4,4,3,3,2,2,1,1]},
+  {id:'random',       days:[3,1,4,2,2,4,1,3,2]}
+];
+const NAMES = ['Alex','Jordan','Riley','Casey','Sam','Jamie'];
+const LOOKS = {
+  Alex:{skin:'#f1c7a1',hair:'#6b4426',style:'short',shirt:'#1f9a9b'},
+  Jordan:{skin:'#8a5536',hair:'#1f1a17',style:'puffs',shirt:'#ea8420'},
+  Riley:{skin:'#d49b6c',hair:'#2e211b',style:'ponytail',shirt:'#8a5cd1'},
+  Casey:{skin:'#efc29c',hair:'#a5532a',style:'bob',shirt:'#d8508f'},
+  Sam:{skin:'#c48460',hair:'#3b2a20',style:'side',shirt:'#36a35a'},
+  Jamie:{skin:'#e0b08a',hair:'#4a3020',style:'bob',shirt:'#5a6fd6'},
+  Morgan:{skin:'#a8704a',hair:'#241b16',style:'short',shirt:'#3d7dd8'},
+  Taylor:{skin:'#f3d0b4',hair:'#d9b25a',style:'ponytail',shirt:'#e9b23b'}
+};
+const CORE = [0,1,2];
+let COND = null, EXTRA = null, ORDER = [], SCREENS = [];
+function setup(cond){
+  COND = ((cond % 3) + 3) % 3; EXTRA = 3 + COND;
+  ORDER = shuffle([...CORE, EXTRA]);
+  SCREENS = ['consent','intro',...ORDER.map((t,i)=>'traj'+i),'compare','familiar','demo','end'];
+}
+const NAME_OF = {}; shuffle(NAMES).forEach((n,i)=>{ NAME_OF[TRAJ[i].id]=n; });
+const ATTN_AT = 2;  // attention item appears in the 3rd trajectory
+const CMP = { dipKid: Math.random()<.5?'Morgan':'Taylor', dipTop: Math.random()<.5 };
+
+/* ---------- Drawing ---------- */
+const IN=[[55,97],[70,97],[85,97],[62,83],[78,83]], MISS=[[14,104],[29,107],[113,107],[127,104],[21,95]];
+function dayArt(n){
+  let s='<svg viewBox="4 38 142 82" aria-hidden="true"><use href="#bk"/>';
+  for(let k=0;k<n;k++) s+=`<use href="#ball" x="${5+IN[k][0]}" y="${IN[k][1]}"/>`;
+  for(let k=0;k<5-n;k++) s+=`<use href="#ball" x="${5+MISS[k][0]}" y="${MISS[k][1]+2}" opacity=".8"/>`;
+  return s+'</svg>';
+}
+function kidSVG(name){
+  const L=LOOKS[name]; let back='',front='';
+  if(L.style==='ponytail') back=`<path d="M70 40 Q90 46 84 74 Q80 60 70 56 Z" fill="${L.hair}"/>`;
+  if(L.style==='puffs') back=[[30,30],[42,20],[58,20],[70,30],[76,44],[24,44]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="${L.hair}"/>`).join('');
+  if(L.style==='short') front=`<path d="M27 46 Q28 20 50 19 Q73 19 74 46 Q66 32 50 31 Q35 32 27 46 Z" fill="${L.hair}"/>`;
+  if(L.style==='bob') front=`<path d="M25 62 Q22 17 50 17 Q78 17 75 62 L69 62 Q70 38 62 32 Q50 27 38 32 Q30 38 31 62 Z" fill="${L.hair}"/>`;
+  if(L.style==='side') front=`<path d="M27 46 Q27 20 50 19 Q74 19 74 44 Q62 28 44 33 Q34 36 27 46 Z" fill="${L.hair}"/>`;
+  if(L.style==='ponytail') front=`<path d="M27 46 Q28 18 50 18 Q73 18 74 46 Q70 30 52 28 Q34 30 27 46 Z" fill="${L.hair}"/>`;
+  return `<svg viewBox="0 0 100 112" role="img" aria-label="${name}">${back}<path d="M18 112 Q18 82 50 80 Q82 82 82 112 Z" fill="${L.shirt}"/><rect x="44" y="70" width="12" height="12" fill="${L.skin}"/><circle cx="50" cy="48" r="24" fill="${L.skin}"/><circle cx="26" cy="50" r="4.5" fill="${L.skin}"/><circle cx="74" cy="50" r="4.5" fill="${L.skin}"/>${front}<circle cx="41" cy="50" r="3.6" fill="#3a3540"/><circle cx="59" cy="50" r="3.6" fill="#3a3540"/></svg>`;
+}
+function strip(days, shown, newest){
+  return `<div class="days">${days.map((n,i)=>`<div class="day${i>=shown?' hid':''}${i===newest?' new':''}">${dayArt(i<shown?n:0)}<span class="lab">Day ${i+1}</span><span class="cnt">${n}/5</span></div>`).join('')}</div>`;
+}
+
+/* ---------- Form helpers ---------- */
+function likert(id, text, lo, hi){
+  return `<fieldset class="q" data-req="${id}"><legend>${text}</legend><div class="likert">${[1,2,3,4,5,6,7].map(v=>`<label><input type="radio" name="${id}" id="${id}_${v}" value="${v}">${v}</label>`).join('')}</div><div class="ends"><span>1 = ${lo}</span><span>7 = ${hi}</span></div></fieldset>`;
+}
+function choice(id, text, opts, req=true){
+  return `<fieldset class="q"${req?` data-req="${id}"`:''}><legend>${text}</legend><div class="choices">${opts.map((o,i)=>`<label class="opt"><input type="radio" name="${id}" id="${id}_${i}" value="${o[0]}"><span>${o[1]}</span></label>`).join('')}</div></fieldset>`;
+}
+function checks(id, text, opts){
+  return `<fieldset class="q"><legend>${text}</legend><div class="choices">${opts.map((o,i)=>`<label class="opt"><input type="checkbox" name="${id}" id="${id}_${i}" value="${o}"><span>${o}</span></label>`).join('')}</div></fieldset>`;
+}
+function open(id, text, hint='Optional'){
+  return `<div class="q pair"><label for="${id}"><b>${text}</b> <span class="muted">(${hint})</span></label><textarea id="${id}" name="${id}" maxlength="600"></textarea></div>`;
+}
+function readForm(form){
+  const out={}, missing=[];
+  form.querySelectorAll('[data-req]').forEach(fs=>{ const n=fs.dataset.req; const v=form.querySelector(`[name="${n}"]:checked`); fs.classList.toggle('missing',!v); if(!v) missing.push(fs); });
+  new FormData(form).forEach((v,k)=>{ out[k] = k in out ? out[k]+'|'+v : v; });
+  return {out, missing};
+}
+function fillRandom(form){
+  const groups={}; form.querySelectorAll('input[type=radio]').forEach(r=>{ (groups[r.name]=groups[r.name]||[]).push(r); });
+  Object.values(groups).forEach(g=>{ g[Math.floor(Math.random()*g.length)].checked=true; });
+  form.querySelectorAll('input[type=number]').forEach(i=>{ i.value=30; });
+}
+
+/* ---------- Data ---------- */
+const ROWS=[];
+function log(screen, measure, response, extra={}){
+  ROWS.push({participant_id:P.pid, study_id:P.study, session_id:P.session, version:CONFIG.VERSION, screen, measure, response:String(response??''), traj_id:extra.traj||'', traj_position:extra.pos??'', character:extra.name||'', days:extra.days||'', rt_ms:extra.rt??'', time:new Date().toISOString()});
+}
+function csv(){
+  const head=['participant_id','study_id','session_id','version','session_start','condition','comparison_shape','traj_order','comparison_dip_kid','comparison_dip_on_top','screen','measure','response','traj_id','traj_position','character','days','rt_ms','time','user_agent'];
+  const order=ORDER.map(i=>TRAJ[i].id).join('>');
+  const q=v=>{v=String(v??''); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  return [head.join(','), ...ROWS.map(r=>[r.participant_id,r.study_id,r.session_id,r.version,P.start,COND,TRAJ[EXTRA].id,order,CMP.dipKid,CMP.dipTop?1:0,r.screen,r.measure,r.response,r.traj_id,r.traj_position,r.character,r.days,r.rt_ms,r.time,navigator.userAgent.slice(0,140)].map(q).join(','))].join('\n');
+}
+
+/* ---------- Screens ---------- */
+let at=0, t0=0, timers=[]; const DELAY = DEBUG ? 60 : 1000;
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function go(i){ clearTimers(); at=i; t0=performance.now(); render(); window.scrollTo(0,0); }
+function next(){ go(at+1); }
+function rt(){ return Math.round(performance.now()-t0); }
+
+function render(){
+  const id=SCREENS[at], app=$('#app');
+  $('#prog').style.width = (100*at/(SCREENS.length-1))+'%';
+  $('#step').textContent = id.startsWith('traj') ? `Kid ${+id.slice(4)+1} of ${ORDER.length}` : '';
+  $('#mode').textContent = CONFIG.DATAPIPE_ID ? '' : 'Preview mode: answers are not sent anywhere';
+  $('#debug').hidden = !DEBUG || id==='end';
+
+  if(id==='consent'){
+    app.innerHTML=`<div class="card"><h1>How people see practice</h1>
+      <p class="lead">In this study you’ll watch four kids practice a simple ball-toss game over nine days, then answer a few questions about each one. It takes about 8 minutes.</p>
+      <!-- CONSENT: add IRB-approved consent text here before collecting any data. -->
+      <form id="f"><fieldset class="q" data-req="consent"><legend>Do you agree to take part?</legend><div class="choices">
+        <label class="opt"><input type="radio" name="consent" id="consent_y" value="yes"><span>Yes, I agree to take part</span></label>
+        <label class="opt"><input type="radio" name="consent" id="consent_n" value="no"><span>No, I do not want to take part</span></label></div></fieldset>
+        ${P.pid?'':`<div class="q pair"><label for="pidtxt"><b>Participant ID</b> <span class="muted">(filled in automatically when you come from Prolific)</span></label><input type="text" id="pidtxt" name="pidtxt" maxlength="80" autocomplete="off"></div>`}
+        <p class="err" id="e" hidden>Please choose an answer to continue.</p>
+        <div class="actions"><button type="submit">Continue</button></div></form></div>`;
+    $('#f').onsubmit=e=>{ e.preventDefault(); const {out,missing}=readForm(e.target); if(missing.length){$('#e').hidden=false;return;}
+      if(!P.pid && out.pidtxt) P.pid=out.pidtxt.trim().slice(0,80);
+      log('consent','consent',out.consent,{rt:rt()});
+      if(out.consent!=='yes'){ app.innerHTML=`<div class="card"><h1>Thank you</h1><p class="lead">You chose not to take part. You can close this page.</p></div>`; return; }
+      next(); };
+  }
+
+  else if(id==='intro'){
+    app.innerHTML=`<div class="card"><h1>The game</h1>
+      <div class="who">${kidSVG('Alex')}<p class="lead">Each day, a kid throws <b>5 balls</b> at a basket. The balls that land <b>in the basket</b> are that day’s score. Missed balls stay on the ground, so you can always see all 5.</p></div>
+      <div style="max-width:220px">${'<div class="day new">'+dayArt(3)+'<span class="lab">Example day</span><span class="cnt">3/5</span></div>'}</div>
+      <p>Each kid <b>throws the same way every day</b>. You’ll see the first five days one at a time, make a quick guess about Day 6, then see the rest.</p>
+      <p class="muted">There are no right or wrong answers. We’re interested in your impressions.</p>
+      <div class="actions"><button id="b">Start</button></div></div>`;
+    $('#b').onclick=()=>{ log('intro','read','',{rt:rt()}); next(); };
+  }
+
+  else if(id.startsWith('traj')){
+    const pos=+id.slice(4), T=TRAJ[ORDER[pos]], N=NAME_OF[T.id], meta={traj:T.id,pos:pos+1,name:N,days:T.days.join(' ')};
+    app.innerHTML=`<div class="card">
+      <div class="who">${kidSVG(N)}<div><h2>${N}</h2><p class="muted">practices ball toss for 9 days and throws the same way every day.</p></div></div>
+      <div id="s"></div><p id="cap" class="muted" aria-live="polite"></p></div>
+      <div id="qa"></div>`;
+    let shown=0;
+    const draw=(newest)=>{ $('#s').innerHTML=strip(T.days,shown,newest); };
+    draw(-1);
+    const reveal=(upto, done)=>{ const step=()=>{ if(shown>=upto){ done(); return; } shown++; draw(shown-1); $('#cap').textContent=`Day ${shown}: ${T.days[shown-1]} of 5 in the basket`; timers.push(setTimeout(step,DELAY)); }; timers.push(setTimeout(step,DEBUG?60:400)); };
+    reveal(CHECK_DAY, ()=>{
+      $('#cap').textContent='';
+      $('#qa').innerHTML=`<form class="card" id="f1"><h2>Quick guess before Day 6</h2>
+        <fieldset class="q" data-req="prediction"><legend>How many balls do you think ${N} will get in the basket on Day 6?</legend>
+          <div class="choices inline nums">${[0,1,2,3,4,5].map(v=>`<label class="opt"><input type="radio" name="prediction" id="pred_${v}" value="${v}">${v}</label>`).join('')}</div></fieldset>
+        ${likert('pred_conf','How sure are you?','Not at all sure','Completely sure')}
+        <p class="err" id="e1" hidden>Please answer both questions.</p>
+        <div class="actions"><button type="submit">See the rest</button></div></form>`;
+      const tp=performance.now();
+      $('#f1').onsubmit=e=>{ e.preventDefault(); const {out,missing}=readForm(e.target); if(missing.length){$('#e1').hidden=false;return;}
+        const r=Math.round(performance.now()-tp);
+        log(id,'prediction_day6',out.prediction,{...meta,rt:r}); log(id,'prediction_conf',out.pred_conf,meta);
+        log(id,'actual_day6',T.days[CHECK_DAY],meta);
+        $('#qa').innerHTML='';
+        reveal(T.days.length, ()=>{ $('#cap').textContent='All 9 days are shown above.'; askAfter(); }); };
+    });
+    function askAfter(){
+      const attn = pos===ATTN_AT ? likert('attn','For this question, please select 2.','Strongly disagree','Strongly agree') : '';
+      $('#qa').innerHTML=`<form class="card" id="f2"><h2>About ${N}, after Day 9</h2>
+        ${likert('frustration',`How frustrated do you think ${N} feels right now?`,'Not at all frustrated','Extremely frustrated')}
+        ${likert('still_better',`${N} can still get better at this game.`,'Strongly disagree','Strongly agree')}
+        ${likert('progress',`Over these 9 days, ${N} made progress.`,'Strongly disagree','Strongly agree')}
+        ${attn}
+        ${likert('learned',`${N} has learned how to do this game.`,'Strongly disagree','Strongly agree')}
+        ${likert('keep_practicing',`${N} should keep practicing this game.`,'Strongly disagree','Strongly agree')}
+        ${choice('manip',`Which best describes ${N} right now?`,[['better','Getting better'],['same','Staying about the same'],['bad_patch','Doing worse for now, but it won’t last'],['worse','Getting worse, and it will last']])}
+        ${choice('explanation',`What best explains ${N}’s scores over the last few days?`,[['luck','Luck, or just an off day'],['effort','How much effort ' + N + ' put in'],['ability',N + '’s ability at this game'],['game','Something about the game'],['other','Something else']])}
+        <div id="othwrap" class="pair" hidden><label for="expl_other"><b>What else explains it?</b> <span class="muted">(please describe)</span></label><textarea id="expl_other" name="expl_other" maxlength="300" style="min-height:56px"></textarea></div>
+        ${open('why',`In a sentence, why do you think ${N} feels that way?`)}
+        <p class="err" id="e2" hidden>Please answer the questions marked in orange.</p>
+        <div class="actions"><button type="submit">Next kid</button></div></form>`;
+      const tq=performance.now();
+      $('#f2').addEventListener('change',e=>{ if(e.target.name==='explanation'){ const o=e.target.value==='other'; $('#othwrap').hidden=!o; if(o) $('#expl_other').focus(); } });
+      $('#f2').onsubmit=e=>{ e.preventDefault(); const {out,missing}=readForm(e.target);
+        const needOther = out.explanation==='other' && !(out.expl_other||'').trim();
+        if(needOther) missing.push($('#othwrap'));
+        if(missing.length){$('#e2').textContent = needOther && missing.length===1 ? 'Please describe what else explains it.' : 'Please answer the questions marked in orange.'; $('#e2').hidden=false; missing[0].scrollIntoView({behavior:'smooth',block:'center'}); return;}
+        const r=Math.round(performance.now()-tq);
+        ['frustration','still_better','progress','learned','keep_practicing','manip','explanation','attn'].forEach(k=>{ if(k in out) log(id,k,out[k],{...meta,rt:k==='frustration'?r:''}); });
+        if(out.explanation==='other') log(id,'explanation_other_text',(out.expl_other||'').trim(),meta);
+        log(id,'why_open',(out.why||'').trim(),meta);
+        next(); };
+    }
+  }
+
+  else if(id==='compare'){
+    const other=CMP.dipKid==='Morgan'?'Taylor':'Morgan';
+    const rows=[{n:CMP.dipKid,days:TRAJ[0].days,id:'dip'},{n:other,days:TRAJ[1].days,id:'plateau_low'}]; if(!CMP.dipTop) rows.reverse();
+    app.innerHTML=`<form class="card" id="f"><h1>Two more kids</h1>
+      <p class="lead">${rows[0].n} and ${rows[1].n} practiced the same game for 9 days. Both throw the same way every day.</p>
+      ${rows.map(r=>`<div class="pair"><div class="who">${kidSVG(r.n)}<span class="row-label">${r.n}</span></div>${strip(r.days,9,-1)}</div>`).join('')}
+      ${choice('who_frustrated','After Day 9, who do you think feels more frustrated?',[[rows[0].n,rows[0].n],[rows[1].n,rows[1].n],['same','They feel about the same']])}
+      ${open('cmp_why','Why?')}
+      <p class="err" id="e" hidden>Please choose an answer.</p>
+      <div class="actions"><button type="submit">Continue</button></div></form>`;
+    $('#f').onsubmit=e=>{ e.preventDefault(); const {out,missing}=readForm(e.target); if(missing.length){$('#e').hidden=false;return;}
+      const v=out.who_frustrated, coded = v==='same'?'same':(v===CMP.dipKid?'dip_kid':'plateau_kid');
+      log('compare','who_more_frustrated',coded,{traj:'dip_vs_plateau_low',name:'dip='+CMP.dipKid,rt:rt()}); log('compare','why_open',(out.cmp_why||'').trim()); next(); };
+  }
+
+  else if(id==='familiar'){
+    app.innerHTML=`<form class="card" id="f"><h1>Your own experience</h1>
+      ${choice('happened','Has this ever happened to you? You got better at something over several sessions, then suddenly did worse, even though you were doing it the same way.',[['yes','Yes'],['no','No'],['unsure','Not sure']])}
+      <div id="more" hidden style="display:flex;flex-direction:column;gap:14px">
+        ${checks('domains','In what? Choose all that apply.',['Sports or exercise','Music','Games','School or studying','A language','A work skill','Something else'])}
+        ${likert('own_frustration','How frustrating was it at the time?','Not at all','Extremely')}
+        ${open('own_explain','How did you explain it to yourself at the time?')}
+      </div>
+      <p class="err" id="e" hidden>Please answer the questions marked in orange.</p>
+      <div class="actions"><button type="submit">Continue</button></div></form>`;
+    const f=$('#f');
+    f.addEventListener('change',()=>{ const y=f.querySelector('[name=happened]:checked')?.value==='yes'; $('#more').hidden=!y; const fs=f.querySelector('[data-req="own_frustration"]'); if(y) fs.setAttribute('data-req','own_frustration'); });
+    f.onsubmit=e=>{ e.preventDefault(); const yes=f.querySelector('[name=happened]:checked')?.value==='yes';
+      const fs=f.querySelector('fieldset .likert')?.closest('fieldset'); if(fs){ if(yes) fs.dataset.req='own_frustration'; else delete fs.dataset.req; }
+      const {out,missing}=readForm(f); if(missing.length){$('#e').hidden=false;return;}
+      log('familiar','happened',out.happened,{rt:rt()});
+      if(yes){ log('familiar','domains',out.domains||''); log('familiar','own_frustration',out.own_frustration); log('familiar','own_explain_open',(out.own_explain||'').trim()); }
+      next(); };
+  }
+
+  else if(id==='demo'){
+    app.innerHTML=`<form class="card" id="f"><h1>About you</h1>
+      <div class="q pair"><label for="age"><b>Your age in years</b></label><input type="number" id="age" name="age" min="18" max="99" inputmode="numeric"></div>
+      <div class="q pair"><label for="gender"><b>Gender</b> <span class="muted">(optional)</span></label><select id="gender" name="gender"><option value="">Choose one</option><option>Woman</option><option>Man</option><option>Non-binary</option><option>Prefer to self-describe</option><option>Prefer not to say</option></select></div>
+      ${choice('practice_now','Are you currently practicing a skill regularly (a sport, an instrument, a language, and so on)?',[['yes','Yes'],['no','No']])}
+      ${open('comments','Anything confusing or worth telling us about this study?')}
+      <p class="err" id="e" hidden>Please enter your age (18 or older) and answer the question marked in orange.</p>
+      <div class="actions"><button type="submit">Finish</button></div></form>`;
+    $('#f').onsubmit=e=>{ e.preventDefault(); const {out,missing}=readForm(e.target); const age=+out.age; if(missing.length||!(age>=18&&age<=99)){$('#e').hidden=false;return;}
+      log('demo','age',age,{rt:rt()}); log('demo','gender',out.gender||''); log('demo','practice_now',out.practice_now); log('demo','comments_open',(out.comments||'').trim());
+      next(); };
+  }
+
+  else if(id==='end'){
+    log('end','session_end',new Date().toISOString());
+    const data=csv();
+    if(CONFIG.DATAPIPE_ID){
+      app.innerHTML=`<div class="card"><h1>Saving your answers…</h1><p class="muted">Please keep this page open for a moment.</p></div>`;
+      fetch('https://pipe.jspsych.org/api/data/',{method:'POST',headers:{'Content-Type':'application/json',Accept:'*/*'},body:JSON.stringify({experimentID:CONFIG.DATAPIPE_ID,filename:`${(P.pid||'anon').replace(/[^A-Za-z0-9_-]/g,'')}_${Date.now()}.csv`,data})})
+        .then(r=>{ if(!r.ok) throw 0; done(true); }).catch(()=>done(false));
+    } else done(null);
+    function done(ok){
+      const back = CONFIG.COMPLETION_URL ? `<a href="${CONFIG.COMPLETION_URL}" target="_top"><button type="button">Return to Prolific</button></a>` : '';
+      app.innerHTML=`<div class="card"><h1>Thank you</h1>
+        <p class="lead">${ok===true?'Your answers were saved.':ok===false?'We could not save your answers automatically. Please copy the data below and send it to the research team.':'This is preview mode, so nothing was sent. The data this session produced is below.'}</p>
+        ${back?`<div class="actions">${back}</div>`:''}
+        ${ok!==true?`<pre id="out"></pre><div class="actions"><button id="cp" class="ghost">Copy data</button><button id="again" class="ghost">Start over</button><span id="cpn" class="muted"></span></div>`:''}</div>`;
+      if(ok!==true){ $('#out').textContent=data;
+        $('#cp').onclick=()=>{ navigator.clipboard.writeText(data).then(()=>{$('#cpn').textContent='Copied.';},()=>{ const r=document.createRange(); r.selectNodeContents($('#out')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); $('#cpn').textContent='Selected. Press Ctrl+C or ⌘C to copy.'; }); };
+        $('#again').onclick=()=>location.reload(); }
+    }
+  }
+}
+
+$('#debug').onclick=()=>{ const id=SCREENS[at];
+  if(id.startsWith('traj')){ // jump through: fill prediction + questions
+    const step=()=>{ const f=$('#f1')||$('#f2'); if(!f){ timers.push(setTimeout(step,150)); return; } fillRandom(f); const isLast=f.id==='f2'; f.requestSubmit(); if(!isLast) timers.push(setTimeout(step,150)); };
+    // speed up reveals
+    step(); return; }
+  clearTimers(); const f=$('#f'); if(f){ fillRandom(f); const a=f.querySelector('#age'); if(a) a.value=30; const c=f.querySelector('#consent_y'); if(c) c.checked=true; f.requestSubmit(); } else { const b=$('#b'); if(b) b.click(); }
+};
+
+(async () => {
+  const forced = qs.get('cond');
+  let c = (forced !== null && /^[0-2]$/.test(forced)) ? +forced : null;
+  if (c === null && CONFIG.DATAPIPE_ID) {
+    try { const r = await fetch('https://pipe.jspsych.org/api/condition/',{method:'POST',headers:{'Content-Type':'application/json',Accept:'*/*'},body:JSON.stringify({experimentID:CONFIG.DATAPIPE_ID})});
+      const j = await r.json(); if (Number.isInteger(j.condition)) c = j.condition; } catch(e) {}
+  }
+  if (c === null) c = Math.floor(Math.random()*3);
+  setup(c); go(0);
+})();
+})();
+</script>
+
+</body>
+</html>
